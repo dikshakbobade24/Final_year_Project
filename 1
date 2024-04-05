@@ -1,0 +1,137 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>CEH</title>
+    <?php require 'utils/styles.php'; ?><!--css links. file found in utils folder-->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- Include jQuery Cookie Plugin from a CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+
+<body>
+    <?php require 'utils/header.php'; ?>
+    <script>
+        function scrollToContent() {
+            var element = document.getElementById("content");
+            var rect = element.getBoundingClientRect();
+            var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            var finalScroll = rect.top + scrollTop - 100; // adjust the offset value as per your requirement
+            window.scroll({
+                top: finalScroll,
+                behavior: 'smooth' // add smooth scrolling behavior
+            });
+        }
+    </script>
+    </head>
+
+
+    <body onload="scrollToContent()">
+
+        <div id="content" class="content"><!--body content holder-->
+            <div class="container">
+                <div class="col-md-6 col-md-offset-3">
+                    <form method="POST">
+
+
+                        <label>Student Roll number:</label><br>
+                        <input type="text" name="Roll_number" class="form-control" required><br><br>
+
+                        <label>Student Name:</label><br>
+                        <input type="text" name="name" class="form-control" required><br><br>
+
+                        <label>Branch:</label><br>
+                        <input type="text" name="branch" class="form-control" required><br><br>
+
+                       
+
+                        <label>Semester:</label><br>
+                        <input type="text" name="sem" class="form-control" required><br><br>
+
+                        <label>Email:</label><br>
+                        <input type="text" name="email" class="form-control" required><br><br>
+
+                        <label>Phone:</label><br>
+                        <input type="text" name="phone" class="form-control" required><br><br>
+
+                        <label>College:</label><br>
+                        <input type="text" name="college" class="form-control" required><br><br>
+
+                        <label>Have you registered for any event before?</label><br>
+                        <input type="checkbox" name="registered_before" value="yes"><br><br>
+
+                        <button type="submit" name="update" required>Submit</button><br><br>
+                        <a href="Roll_number.php"><u>Already registered ?</u></a>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <?php require 'utils/footer.php'; ?>
+    </body>
+
+</html>
+
+<?php
+
+if (isset($_POST["update"])) {
+    $Roll_number = $_POST["Roll_number"];
+    $name = $_POST["name"];
+    $branch = $_POST["branch"];
+    $sem = $_POST["sem"];
+    $email = $_POST["email"];
+    $phone = $_POST["phone"];
+    $college = $_POST["college"];
+    $event_id = $_COOKIE['my_cookie'];
+    $registered_before = isset($_POST["registered_before"]) ? true : false;
+
+    if (!empty($Roll_number) && !empty($name) && !empty($branch) && !empty($sem) && !empty($email) && !empty($phone) && !empty($college)) {
+        include 'classes/db1.php';
+
+        // Check if the participant has already registered for this event
+        $result1 = $conn->query("SELECT * FROM participent WHERE Roll_number = '$Roll_number'");
+        $result2 = $conn->query("SELECT * FROM registered WHERE Roll_number = '$Roll_number' AND event_id = '$event_id'");
+
+        if ($result1->num_rows > 0 && $result2->num_rows > 0) {
+            // The participant has already registered for this event
+            echo "<script>
+            alert('You have already registered for this event.');
+            window.location.href='Roll_number.php';
+            </script>";
+        } else {
+           
+            // The participant has not registered for this event yet
+            $INSERT1 = "INSERT INTO participent (Roll_number, name, branch, sem, email, phone, college, event_id) VALUES ('$Roll_number', '$name', '$branch', $sem, '$email', '$phone', '$college', '$event_id')";
+
+            if ($registered_before) {
+                // Increment the value of the "registered_before" column and update the participant's record
+                $conn->query("UPDATE participent SET registered_before = registered_before + 1 WHERE Roll_number = '$Roll_number'");
+            }
+
+            $INSERT2 = "INSERT INTO registered (Roll_number, event_id) VALUES ('$Roll_number', '$event_id')";
+
+            if ($conn->query($INSERT1) === TRUE && $conn->query($INSERT2) === TRUE) {
+                echo "<script>
+                alert('Registered Successfully!');
+                window.location.href='Roll_number.php';
+                </script>";
+            } else {
+                echo "<script>
+                alert('Error registering user. Please try again.');
+                window.location.href='register.php';
+                </script>";
+            }
+        }
+
+        $conn->close();
+    } else {
+        echo "<script>
+        alert('All fields are required');
+        window.location.href='register.php';
+        </script>";
+    }
+}
+
+?>
